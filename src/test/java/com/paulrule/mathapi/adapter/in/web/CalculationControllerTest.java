@@ -70,6 +70,24 @@ class CalculationControllerTest {
     }
 
     @Test
+    void dividesToThirtyFourSignificantDigits() throws Exception {
+        calculate("""
+                {"operation":"DIVIDE","a":1,"b":"3"}""")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("0.3333333333333333333333333333333333"));
+    }
+
+    @Test
+    void rejectsDivisionByZeroAsUnprocessable_BR2() throws Exception {
+        problem(calculate("""
+                {"operation":"DIVIDE","a":"1","b":0}"""), 422, "/problems/division-by-zero");
+        problem(calculate("""
+                {"operation":"DIVIDE","a":"1","b":"0.00"}"""), 422, "/problems/division-by-zero");
+        problem(calculate("""
+                {"operation":"DIVIDE","a":"1","b":-0}"""), 422, "/problems/division-by-zero");
+    }
+
+    @Test
     void rejectsMalformedJson() throws Exception {
         problem(calculate("{\"operation\":"), 400, "/problems/invalid-request");
     }
@@ -106,7 +124,7 @@ class CalculationControllerTest {
     void rejectsUnknownOperation() throws Exception {
         problem(calculate("""
                 {"operation":"POWER","a":"1","b":"2"}"""), 400, "/problems/unknown-operation")
-                .andExpect(jsonPath("$.detail").value(containsString("ADD, SUBTRACT, MULTIPLY")));
+                .andExpect(jsonPath("$.detail").value(containsString("ADD, SUBTRACT, MULTIPLY, DIVIDE")));
         problem(calculate("""
                 {"operation":"add","a":"1","b":"2"}"""), 400, "/problems/unknown-operation");
     }
