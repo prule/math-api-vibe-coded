@@ -69,3 +69,4 @@ Operation.apply(a, b) → Result   (b is null for a unary Operation)
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
 | 2026-11-13 | §2: a new kind of failure also needs its `ProblemType` and documented example; `POWER` and `MODULO` (BR-5, BR-6, BR-7) implemented |
+| 2026-11-13 | `SQRT` and `NEGATE` (BR-8, BR-9), `Operation.arity()` and `ArityMismatchException` implemented |

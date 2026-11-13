@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class CalculationTest {
@@ -17,6 +18,97 @@ class CalculationTest {
         return new Calculation(operation, new BigDecimal(a), new BigDecimal(b))
                 .result()
                 .toPlainString();
+    }
+
+    private static String result(Operation operation, String a) {
+        return new Calculation(operation, new BigDecimal(a), null).result().toPlainString();
+    }
+
+    @Test
+    void takesExactSquareRoots() {
+        assertThat(result(Operation.SQRT, "4")).isEqualTo("2");
+        assertThat(result(Operation.SQRT, "0.25")).isEqualTo("0.5");
+    }
+
+    @Test
+    void roundsSquareRootsToThirtyFourSignificantDigits_BR3() {
+        assertThat(result(Operation.SQRT, "2")).isEqualTo("1.414213562373095048801688724209698");
+        assertThat(result(Operation.SQRT, "10")).isEqualTo("3.162277660168379331998893544432719");
+    }
+
+    @Test
+    void roundsASquareRootTieToEven_BR3() {
+        // Exact roots with 35 significant digits ending in 5: the 34-digit Result goes to the even neighbour.
+        var down = new BigDecimal("1234567890123456789012345678901234.5");
+        var up = new BigDecimal("1234567890123456789012345678901235.5");
+
+        assertThat(new Calculation(Operation.SQRT, down.multiply(down), null).result())
+                .isEqualByComparingTo("1234567890123456789012345678901234");
+        assertThat(new Calculation(Operation.SQRT, up.multiply(up), null).result())
+                .isEqualByComparingTo("1234567890123456789012345678901236");
+    }
+
+    @Test
+    void takesTheSquareRootOfTheLargestOperand_BR1() {
+        assertThat(new Calculation(Operation.SQRT, new BigDecimal("1E+1000"), null).result())
+                .isEqualByComparingTo("1E+500");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "-0", "0.00", "0E+1000"})
+    void takesTheSquareRootOfEveryZeroRepresentationAsZero_BR8(String zero) {
+        assertThat(result(Operation.SQRT, zero)).isEqualTo("0");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"-1", "-0.0001", "-1E-1000"})
+    void rejectsTheSquareRootOfANegativeOperand_BR8(String negative) {
+        var calculation = new Calculation(Operation.SQRT, new BigDecimal(negative), null);
+
+        assertThatThrownBy(calculation::result).isInstanceOf(NegativeSquareRootException.class);
+    }
+
+    @Test
+    void negatesExactly_BR3() {
+        assertThat(result(Operation.NEGATE, "5")).isEqualTo("-5");
+        assertThat(result(Operation.NEGATE, "-2.50")).isEqualTo("2.5");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "-0", "0.00", "0E+1000"})
+    void negatesEveryZeroRepresentationToZero_BR4(String zero) {
+        assertThat(result(Operation.NEGATE, zero)).isEqualTo("0");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SQRT", "NEGATE"})
+    void rejectsAUnaryCalculationGivenB_BR9(String unary) {
+        assertThatThrownBy(() -> new Calculation(Operation.named(unary), BigDecimal.ONE, BigDecimal.ONE))
+                .isInstanceOf(ArityMismatchException.class)
+                .hasMessageContaining(unary);
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            names = {"SQRT", "NEGATE"},
+            mode = EnumSource.Mode.EXCLUDE) // a new Operation is binary by default
+    void rejectsABinaryCalculationWithoutB_BR9(Operation binary) {
+        assertThatThrownBy(() -> new Calculation(binary, BigDecimal.ONE, null))
+                .isInstanceOf(ArityMismatchException.class)
+                .hasMessageContaining(binary.name());
+    }
+
+    @Test
+    void checksArityBeforeOperandRange_BR9_BR1() {
+        assertThatThrownBy(() -> new Calculation(Operation.SQRT, new BigDecimal("1E+1001"), new BigDecimal("1E+1001")))
+                .isInstanceOf(ArityMismatchException.class);
+    }
+
+    @Test
+    void checksOperandRangeOfAUnaryOperand_BR1() {
+        assertThatThrownBy(() -> new Calculation(Operation.NEGATE, new BigDecimal("1E+1001"), null))
+                .isInstanceOf(OperandOutOfRangeException.class)
+                .hasMessageContaining("Operand a");
     }
 
     @Test

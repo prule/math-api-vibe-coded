@@ -1,7 +1,9 @@
 package com.paulrule.mathapi.adapter.in.web;
 
+import com.paulrule.mathapi.domain.ArityMismatchException;
 import com.paulrule.mathapi.domain.DivisionByZeroException;
 import com.paulrule.mathapi.domain.InvalidExponentException;
+import com.paulrule.mathapi.domain.NegativeSquareRootException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
@@ -34,6 +36,11 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
         return ProblemType.UNKNOWN_OPERATION.problem(e.getMessage());
     }
 
+    @ExceptionHandler(ArityMismatchException.class)
+    ProblemDetail arityMismatch(ArityMismatchException e) {
+        return ProblemType.INVALID_REQUEST.problem(e.getMessage()); // BR-9 is reported as an invalid request
+    }
+
     @ExceptionHandler(OperandOutOfRangeException.class)
     ProblemDetail operandOutOfRange(OperandOutOfRangeException e) {
         return ProblemType.OPERAND_OUT_OF_RANGE.problem(e.getMessage());
@@ -47,6 +54,11 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(InvalidExponentException.class)
     ProblemDetail invalidExponent(InvalidExponentException e) {
         return ProblemType.INVALID_EXPONENT.problem(e.getMessage());
+    }
+
+    @ExceptionHandler(NegativeSquareRootException.class)
+    ProblemDetail negativeSquareRoot(NegativeSquareRootException e) {
+        return ProblemType.NEGATIVE_SQUARE_ROOT.problem(e.getMessage());
     }
 
     @ExceptionHandler(ResultOutOfRangeException.class)

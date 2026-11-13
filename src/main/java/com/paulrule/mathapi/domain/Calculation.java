@@ -3,14 +3,19 @@ package com.paulrule.mathapi.domain;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+/** {@code b} is null exactly when the Operation is unary (BR-9). */
 public record Calculation(Operation operation, BigDecimal a, BigDecimal b) {
 
     public Calculation {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(a, "a");
-        Objects.requireNonNull(b, "b");
+        if ((b == null) != (operation.arity() == 1)) {
+            throw new ArityMismatchException(operation); // BR-9, before BR-1
+        }
         requireInRange(a, "a");
-        requireInRange(b, "b");
+        if (b != null) {
+            requireInRange(b, "b");
+        }
     }
 
     static final int MAX_PRECISION = 100;

@@ -14,8 +14,8 @@
 | 4 | Operand limits | Done | #4 |
 | 5 | OpenAPI documentation | Done | #5 |
 | 5a | API docs toggle per environment (`prod` profile) | Done | #7 |
-| 6 | More binary operations (power, modulo) | In progress | |
-| 7 | Unary operations (sqrt, negate) | Not started | |
+| 6 | More binary operations (power, modulo) | Done | #8 |
+| 7 | Unary operations (sqrt, negate) | In progress | |
 | 8 | Operations discovery endpoint | Not started | |
 
 Items 1–5 complete PRD v1; 5a is a v1 follow-up. Items under **Later** need a PRD update first (each one moves something out of the non-goals or roadmap).

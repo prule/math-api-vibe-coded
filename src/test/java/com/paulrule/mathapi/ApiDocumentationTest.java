@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import com.paulrule.mathapi.domain.Operation;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,9 +69,17 @@ class ApiDocumentationTest {
                 .andExpect(jsonPath("$.components.schemas.CalculationRequest.properties.a.type")
                         .value(containsInAnyOrder("number", "string")))
                 .andExpect(jsonPath("$.components.schemas.CalculationRequest.properties.b.type")
-                        .value(containsInAnyOrder("number", "string")))
+                        .value(containsInAnyOrder("number", "string", "null")))
                 .andExpect(jsonPath("$.components.schemas.CalculationRequest.required")
-                        .value(containsInAnyOrder("operation", "a", "b")));
+                        .value(containsInAnyOrder("operation", "a")));
+    }
+
+    @Test
+    void documentsBAsOptionalInTheResponse_BR9() throws Exception {
+        String docs = apiDocs().andReturn().getResponse().getContentAsString();
+        List<String> responseRequired = JsonPath.read(docs, "$.components.schemas.CalculationResponse.required");
+
+        assertThat(responseRequired).containsExactlyInAnyOrder("operation", "a", "result");
     }
 
     @Test
@@ -87,13 +96,17 @@ class ApiDocumentationTest {
                         .value(containsInAnyOrder(
                                 REF + "invalid-request",
                                 REF + "invalid-request-missing-field",
+                                REF + "invalid-request-arity",
                                 REF + "unknown-operation",
                                 REF + "operand-out-of-range")))
                 .andExpect(jsonPath(exampleRefs("406")).value(containsInAnyOrder(REF + "not-acceptable")))
                 .andExpect(jsonPath(exampleRefs("415")).value(containsInAnyOrder(REF + "unsupported-media-type")))
                 .andExpect(jsonPath(exampleRefs("422"))
                         .value(containsInAnyOrder(
-                                REF + "division-by-zero", REF + "invalid-exponent", REF + "result-out-of-range")))
+                                REF + "division-by-zero",
+                                REF + "invalid-exponent",
+                                REF + "negative-square-root",
+                                REF + "result-out-of-range")))
                 .andExpect(jsonPath(exampleRefs("500")).value(containsInAnyOrder(REF + "unexpected-failure")));
     }
 
@@ -115,6 +128,12 @@ class ApiDocumentationTest {
                         jsonPath(EXAMPLES + "['invalid-exponent'].value.type").value("/problems/invalid-exponent"))
                 .andExpect(
                         jsonPath(EXAMPLES + "['invalid-exponent'].value.status").value(422))
+                .andExpect(jsonPath(EXAMPLES + "['invalid-request-arity'].value.type")
+                        .value("/problems/invalid-request"))
+                .andExpect(jsonPath(EXAMPLES + "['negative-square-root'].value.type")
+                        .value("/problems/negative-square-root"))
+                .andExpect(jsonPath(EXAMPLES + "['negative-square-root'].value.status")
+                        .value(422))
                 .andExpect(jsonPath(EXAMPLES + "['result-out-of-range'].value.type")
                         .value("/problems/result-out-of-range"))
                 .andExpect(jsonPath(EXAMPLES + "['result-out-of-range'].value.status")
@@ -157,7 +176,9 @@ class ApiDocumentationTest {
     void documentedExamplesMatchRealResponses() throws Exception {
         String docs = apiDocs().andReturn().getResponse().getContentAsString();
         assertMatchesExample(docs, "invalid-request", "{\"operation\":");
-        assertMatchesExample(docs, "invalid-request-missing-field", "{\"operation\":\"ADD\",\"a\":1}");
+        assertMatchesExample(docs, "invalid-request-missing-field", "{\"operation\":\"ADD\",\"b\":1}");
+        assertMatchesExample(docs, "invalid-request-arity", "{\"operation\":\"SQRT\",\"a\":4,\"b\":1}");
+        assertMatchesExample(docs, "negative-square-root", "{\"operation\":\"SQRT\",\"a\":-1}");
         assertMatchesExample(docs, "operand-out-of-range", "{\"operation\":\"ADD\",\"a\":\"1E+1001\",\"b\":1}");
         assertMatchesExample(docs, "division-by-zero", "{\"operation\":\"DIVIDE\",\"a\":1,\"b\":0}");
         assertMatchesExample(docs, "unknown-operation", "{\"operation\":\"NOT_AN_OPERATION\",\"a\":1,\"b\":2}");

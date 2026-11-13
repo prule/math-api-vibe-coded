@@ -132,6 +132,55 @@ class CalculationControllerTest {
     }
 
     @Test
+    void takesASquareRootWithoutBAndOmitsBFromTheResponse_BR9() throws Exception {
+        calculate("""
+                {"operation":"SQRT","a":2}""")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.operation").value("SQRT"))
+                .andExpect(jsonPath("$.a").value("2"))
+                .andExpect(jsonPath("$.b").doesNotExist())
+                .andExpect(jsonPath("$.result").value("1.414213562373095048801688724209698"));
+    }
+
+    @Test
+    void acceptsANullBForAUnaryOperation_BR9() throws Exception {
+        calculate("""
+                {"operation":"NEGATE","a":"-2.50","b":null}""")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.a").value("-2.50"))
+                .andExpect(jsonPath("$.b").doesNotExist())
+                .andExpect(jsonPath("$.result").value("2.5"));
+    }
+
+    @Test
+    void rejectsBForAUnaryOperationAsInvalid_BR9() throws Exception {
+        problem(calculate("""
+                {"operation":"SQRT","a":4,"b":1}"""), 400, "/problems/invalid-request")
+                .andExpect(jsonPath("$.detail").value(containsString("SQRT")));
+    }
+
+    @Test
+    void rejectsMissingBForABinaryOperationAsInvalid_BR9() throws Exception {
+        problem(calculate("""
+                {"operation":"ADD","a":1}"""), 400, "/problems/invalid-request")
+                .andExpect(jsonPath("$.detail").value(containsString("ADD")));
+        problem(calculate("""
+                {"operation":"DIVIDE","a":1,"b":null}"""), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void reportsOperandCountBeforeOperandOutOfRange_BR9_BR1() throws Exception {
+        problem(calculate("""
+                {"operation":"NEGATE","a":"1E+1001","b":"1E+1001"}"""), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void rejectsTheSquareRootOfANegativeOperandAsUnprocessable_BR8() throws Exception {
+        problem(calculate("""
+                {"operation":"SQRT","a":"-1"}"""), 422, "/problems/negative-square-root");
+    }
+
+    @Test
     void rejectsOperandOutOfRangeNamingItButNotEchoingIt_BR1() throws Exception {
         problem(calculate("""
                 {"operation":"MULTIPLY","a":1e999999999,"b":"1e999999999"}"""), 400, "/problems/operand-out-of-range")
@@ -224,7 +273,8 @@ class CalculationControllerTest {
     @Test
     void rejectsMissingField() throws Exception {
         problem(calculate("""
-                {"operation":"ADD","a":"1"}"""), 400, "/problems/invalid-request");
+                {"operation":"ADD","b":"1"}"""), 400, "/problems/invalid-request")
+                .andExpect(jsonPath("$.detail").value(ProblemType.MISSING_FIELD_DETAIL));
         problem(calculate("""
                 {"a":"1","b":"2"}"""), 400, "/problems/invalid-request");
         problem(calculate("""
@@ -253,8 +303,8 @@ class CalculationControllerTest {
     void rejectsUnknownOperation() throws Exception {
         problem(calculate("""
                 {"operation":"NOT_AN_OPERATION","a":"1","b":"2"}"""), 400, "/problems/unknown-operation")
-                .andExpect(
-                        jsonPath("$.detail").value(containsString("ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO")));
+                .andExpect(jsonPath("$.detail")
+                        .value(containsString("ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO, SQRT, NEGATE")));
         problem(calculate("""
                 {"operation":"add","a":"1","b":"2"}"""), 400, "/problems/unknown-operation");
     }
@@ -264,7 +314,13 @@ class CalculationControllerTest {
         problem(calculate("""
                 {"operation":"NOT_AN_OPERATION","a":"abc","b":"2"}"""), 400, "/problems/invalid-request");
         problem(calculate("""
-                {"operation":"NOT_AN_OPERATION","a":"1"}"""), 400, "/problems/invalid-request");
+                {"operation":"NOT_AN_OPERATION","b":"1"}"""), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void reportsUnknownOperationBeforeOperandCount_BR9() throws Exception {
+        problem(calculate("""
+                {"operation":"NOT_AN_OPERATION","a":"1"}"""), 400, "/problems/unknown-operation");
     }
 
     @Test
