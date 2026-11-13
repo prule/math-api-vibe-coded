@@ -1,6 +1,7 @@
 package com.paulrule.mathapi.adapter.in.web;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -85,6 +86,91 @@ class CalculationControllerTest {
                 {"operation":"DIVIDE","a":"1","b":"0.00"}"""), 422, "/problems/division-by-zero");
         problem(calculate("""
                 {"operation":"DIVIDE","a":"1","b":-0}"""), 422, "/problems/division-by-zero");
+    }
+
+    @Test
+    void rejectsOperandOutOfRangeNamingItButNotEchoingIt_BR1() throws Exception {
+        problem(calculate("""
+                {"operation":"MULTIPLY","a":1e999999999,"b":"1e999999999"}"""), 400, "/problems/operand-out-of-range")
+                .andExpect(jsonPath("$.detail").value(containsString("Operand a")))
+                .andExpect(jsonPath("$.detail").value(not(containsString("999999999"))));
+        problem(calculate("""
+                {"operation":"ADD","a":"1","b":"1E-1001"}"""), 400, "/problems/operand-out-of-range")
+                .andExpect(jsonPath("$.detail").value(containsString("Operand b")));
+    }
+
+    @Test
+    void acceptsOperandsAtTheLimits_BR1() throws Exception {
+        calculate("""
+                {"operation":"ADD","a":"1E+1000","b":1E-1000}""").andExpect(status().isOk());
+    }
+
+    @Test
+    void reportsUnknownOperationBeforeOperandOutOfRange() throws Exception {
+        problem(calculate("""
+                {"operation":"POWER","a":"1E+1001","b":"1"}"""), 400, "/problems/unknown-operation");
+    }
+
+    @Test
+    void acceptsStringsAndNumbersOfOneThousandCharacters() throws Exception {
+        var thousandCharacters = "0." + "0".repeat(997) + "1"; // scale 998, one significant digit
+        calculate("{\"operation\":\"ADD\",\"a\":\"" + thousandCharacters + "\",\"b\":" + thousandCharacters + "}")
+                .andExpect(status().isOk());
+    }
+
+    // 1,001 characters, scale 999: within BR-1, so only the parse limit can reject it.
+    private static final String LONG_NUMBER = "0." + "0".repeat(998) + "1";
+
+    @Test
+    void rejectsStringOverOneThousandCharactersAsInvalid() throws Exception {
+        problem(
+                calculate("{\"operation\":\"ADD\",\"a\":\"" + LONG_NUMBER + "\",\"b\":1}"),
+                400,
+                "/problems/invalid-request");
+    }
+
+    @Test
+    void rejectsNumberOverOneThousandCharactersAsInvalid() throws Exception {
+        problem(
+                calculate("{\"operation\":\"ADD\",\"a\":" + LONG_NUMBER + ",\"b\":1}"),
+                400,
+                "/problems/invalid-request");
+    }
+
+    @Test
+    void rejectsFieldNameOverOneThousandCharactersAsInvalid() throws Exception {
+        problem(
+                calculate("{\"operation\":\"ADD\",\"a\":1,\"b\":2,\"" + "k".repeat(1_001) + "\":0}"),
+                400,
+                "/problems/invalid-request");
+    }
+
+    @Test
+    void acceptsBodyOfSixteenThousandThreeHundredEightyFourBytes() throws Exception {
+        calculate(padded(16_384)).andExpect(status().isOk());
+    }
+
+    @Test
+    void rejectsBodyOverSixteenThousandThreeHundredEightyFourBytesAsInvalid() throws Exception {
+        problem(calculate(padded(16_385)), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void limitsBodyInUtf8BytesNotCharacters() throws Exception {
+        // About 15,200 characters but 19,000 bytes: "é" is two bytes in UTF-8.
+        var body = "{\"operation\":\"ADD\",\"a\":1,\"b\":2,\"x\":[" + "\"é\",".repeat(3_800) + "0]}";
+        problem(
+                mockMvc.perform(post("/api/v1/calculations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))),
+                400,
+                "/problems/invalid-request");
+    }
+
+    /** A valid request padded with whitespace to exactly {@code length} characters. */
+    private static String padded(int length) {
+        var body = "{\"operation\":\"ADD\",\"a\":1,\"b\":2}";
+        return body.substring(0, body.length() - 1) + " ".repeat(length - body.length()) + "}";
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.paulrule.mathapi.adapter.in.web;
 
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
 import org.jspecify.annotations.Nullable;
@@ -29,6 +30,11 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UnknownOperationException.class)
     ProblemDetail unknownOperation(UnknownOperationException e) {
         return problem(HttpStatus.BAD_REQUEST, "unknown-operation", "Unknown operation", e.getMessage());
+    }
+
+    @ExceptionHandler(OperandOutOfRangeException.class)
+    ProblemDetail operandOutOfRange(OperandOutOfRangeException e) {
+        return problem(HttpStatus.BAD_REQUEST, "operand-out-of-range", "Operand out of range", e.getMessage());
     }
 
     @ExceptionHandler(DivisionByZeroException.class)

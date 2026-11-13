@@ -2,9 +2,13 @@ package com.paulrule.mathapi.adapter.in.web;
 
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
-/** Operands arrive as JSON numbers or numeric strings; Jackson parses both straight to BigDecimal. */
 public record CalculationRequest(
         @NotNull String operation,
-        @NotNull BigDecimal a,
-        @NotNull BigDecimal b) {}
+
+        @NotNull @JsonDeserialize(using = OperandDeserializer.class)
+        BigDecimal a,
+
+        @NotNull @JsonDeserialize(using = OperandDeserializer.class)
+        BigDecimal b) {}
