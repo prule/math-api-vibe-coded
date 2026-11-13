@@ -1,0 +1,12 @@
+# prod: any environment reachable beyond developers (STANDARDS §8). Overrides only what differs from application.yaml.
+springdoc:
+  # API docs and Swagger UI are for developers only (PRD §3.3).
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+spring:
+  web:
+    resources:
+      # Without this the swagger-ui webjar is still served as a static resource.
+      add-mappings: false
