@@ -1,10 +1,11 @@
 package com.paulrule.mathapi.domain;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-/** ADD, SUBTRACT and MULTIPLY are exact: no MathContext, no rounding (BR-3). */
+/** ADD, SUBTRACT and MULTIPLY are exact; DIVIDE rounds to DECIMAL128 (BR-3). */
 public enum Operation {
     ADD {
         @Override
@@ -22,6 +23,15 @@ public enum Operation {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             return a.multiply(b);
+        }
+    },
+    DIVIDE {
+        @Override
+        public BigDecimal apply(BigDecimal a, BigDecimal b) {
+            if (b.signum() == 0) {
+                throw new DivisionByZeroException(); // BR-2: every zero form has signum 0
+            }
+            return a.divide(b, MathContext.DECIMAL128);
         }
     };
 

@@ -1,9 +1,12 @@
 package com.paulrule.mathapi.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class CalculationTest {
 
@@ -58,6 +61,47 @@ class CalculationTest {
     void multipliesWithScaleGrowthExactly_BR3() {
         assertThat(result(Operation.MULTIPLY, "0.001", "0.0001")).isEqualTo("0.0000001");
         assertThat(result(Operation.MULTIPLY, "1.1", "1.1")).isEqualTo("1.21");
+    }
+
+    @Test
+    void dividesOneByThreeToThirtyFourSignificantDigits_BR3() {
+        assertThat(result(Operation.DIVIDE, "1", "3")).isEqualTo("0." + "3".repeat(34));
+    }
+
+    @Test
+    void roundsDivisionHalfEven_BR3() {
+        assertThat(result(Operation.DIVIDE, "2", "3")).isEqualTo("0." + "6".repeat(33) + "7");
+        // 35 significant digits ending in an exact half: ties go to the even neighbour.
+        assertThat(result(Operation.DIVIDE, "1234567890123456789012345678901234.5", "1"))
+                .isEqualTo("1234567890123456789012345678901234");
+        assertThat(result(Operation.DIVIDE, "1234567890123456789012345678901235.5", "1"))
+                .isEqualTo("1234567890123456789012345678901236");
+    }
+
+    @Test
+    void dividesExactlyWhenTheResultTerminates() {
+        assertThat(result(Operation.DIVIDE, "1", "4")).isEqualTo("0.25");
+        assertThat(result(Operation.DIVIDE, "10", "2")).isEqualTo("5");
+        assertThat(result(Operation.DIVIDE, "100", "0.01")).isEqualTo("10000");
+    }
+
+    @Test
+    void dividesByNegativeDivisor() {
+        assertThat(result(Operation.DIVIDE, "1", "-4")).isEqualTo("-0.25");
+        assertThat(result(Operation.DIVIDE, "-9", "-3")).isEqualTo("3");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "0.00", "-0", "0E+5"})
+    void rejectsDivisionByEveryZeroRepresentation_BR2(String zero) {
+        var calculation = new Calculation(Operation.DIVIDE, BigDecimal.ONE, new BigDecimal(zero));
+
+        assertThatThrownBy(calculation::result).isInstanceOf(DivisionByZeroException.class);
+    }
+
+    @Test
+    void dividesZeroByNonZeroToZero() {
+        assertThat(result(Operation.DIVIDE, "0.00", "7")).isEqualTo("0");
     }
 
     @Test

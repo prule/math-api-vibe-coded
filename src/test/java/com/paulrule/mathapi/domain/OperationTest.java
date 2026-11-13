@@ -12,6 +12,7 @@ class OperationTest {
         assertThat(Operation.named("ADD")).isEqualTo(Operation.ADD);
         assertThat(Operation.named("SUBTRACT")).isEqualTo(Operation.SUBTRACT);
         assertThat(Operation.named("MULTIPLY")).isEqualTo(Operation.MULTIPLY);
+        assertThat(Operation.named("DIVIDE")).isEqualTo(Operation.DIVIDE);
     }
 
     @Test

@@ -9,8 +9,8 @@
 | # | Item | Status | PR |
 |---|------|--------|-----------------|
 | 1 | Walking skeleton | Done | #1 |
-| 2 | Exact operations: add, subtract, multiply | In progress | |
-| 3 | Divide | Not started | |
+| 2 | Exact operations: add, subtract, multiply | Done | #2 |
+| 3 | Divide | In progress | |
 | 4 | Operand limits | Not started | |
 | 5 | OpenAPI documentation | Not started | |
 | 5a | API docs toggle per environment (`prod` profile) | Not started | |
