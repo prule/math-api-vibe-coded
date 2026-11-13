@@ -9,19 +9,13 @@ import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
-/**
- * Enforces the STANDARDS.md §2 dependency rules.
- *
- * <p>shortcut: every rule allows empty packages (withOptionalLayers / allowEmptyShould), remove both once every
- * layer has a class (backlog item 2).
- */
+/** Enforces the STANDARDS.md §2 dependency rules. */
 @AnalyzeClasses(packages = "com.paulrule.mathapi", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
 
     @ArchTest
     static final ArchRule LAYERS_DEPEND_INWARDS = layeredArchitecture()
             .consideringOnlyDependenciesInLayers()
-            .withOptionalLayers(true)
             .layer("Domain")
             .definedBy("..mathapi.domain..")
             .layer("Application")
@@ -43,8 +37,7 @@ class ArchitectureTest {
             .resideInAPackage("..mathapi.domain..")
             .should()
             .onlyDependOnClassesThat()
-            .resideInAnyPackage("java..", "..mathapi.domain..")
-            .allowEmptyShould(true);
+            .resideInAnyPackage("java..", "..mathapi.domain..");
 
     @ArchTest
     static final ArchRule APPLICATION_HAS_NO_WEB_OR_ADAPTERS = noClasses()
@@ -56,6 +49,5 @@ class ArchitectureTest {
                     "org.springframework.web..",
                     "org.springframework.http..",
                     "org.springframework.boot.webmvc..",
-                    "..mathapi.adapter..")
-            .allowEmptyShould(true);
+                    "..mathapi.adapter..");
 }
