@@ -82,6 +82,7 @@ Errors use RFC 9457 Problem Details (`application/problem+json`):
 | 422 | `POWER` exponent not an integer or \|b\| > 999 (BR-5) | `/problems/invalid-exponent` |
 | 422 | `SQRT` of a negative operand (BR-8) | `/problems/negative-square-root` |
 | 422 | `POWER` result scale outside ±1000 (BR-6) | `/problems/result-out-of-range` |
+| 404, 405, 406, 415, 500 | Framework errors (unknown path, wrong method or media type) and unexpected failures | `about:blank` (RFC 9457 default; set explicitly so `type` is always present) |
 
 ### 3.3 Supporting endpoints
 
@@ -126,3 +127,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | Date | Change |
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
+| 2026-11-13 | §3.2: framework errors and unexpected failures use `type: about:blank` |

@@ -8,8 +8,8 @@
 
 | # | Item | Status | PR |
 |---|------|--------|-----------------|
-| 1 | Walking skeleton | In progress | |
-| 2 | Exact operations: add, subtract, multiply | Not started | |
+| 1 | Walking skeleton | Done | #1 |
+| 2 | Exact operations: add, subtract, multiply | In progress | |
 | 3 | Divide | Not started | |
 | 4 | Operand limits | Not started | |
 | 5 | OpenAPI documentation | Not started | |
