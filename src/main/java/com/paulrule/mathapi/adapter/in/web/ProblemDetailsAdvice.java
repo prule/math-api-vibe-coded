@@ -29,24 +29,23 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(UnknownOperationException.class)
     ProblemDetail unknownOperation(UnknownOperationException e) {
-        return problem(HttpStatus.BAD_REQUEST, "unknown-operation", "Unknown operation", e.getMessage());
+        return ProblemType.UNKNOWN_OPERATION.problem(e.getMessage());
     }
 
     @ExceptionHandler(OperandOutOfRangeException.class)
     ProblemDetail operandOutOfRange(OperandOutOfRangeException e) {
-        return problem(HttpStatus.BAD_REQUEST, "operand-out-of-range", "Operand out of range", e.getMessage());
+        return ProblemType.OPERAND_OUT_OF_RANGE.problem(e.getMessage());
     }
 
     @ExceptionHandler(DivisionByZeroException.class)
     ProblemDetail divisionByZero(DivisionByZeroException e) {
-        return problem(HttpStatus.UNPROCESSABLE_CONTENT, "division-by-zero", "Division by zero", e.getMessage());
+        return ProblemType.DIVISION_BY_ZERO.problem(e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     ProblemDetail unexpected(Exception e) {
         log.error("Unexpected failure", e);
-        var problem =
-                ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, ProblemType.UNEXPECTED_DETAIL);
         problem.setType(ABOUT_BLANK);
         return problem;
     }
@@ -55,13 +54,13 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         // The parser's message can echo input and internals, so it is replaced, not passed on.
-        return invalidRequest("The request body is not valid JSON or an operand is not a number.");
+        return invalidRequest(ProblemType.UNREADABLE_DETAIL);
     }
 
     @Override
     protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return invalidRequest("Missing required field(s): operation, a and b are all required.");
+        return invalidRequest(ProblemType.MISSING_FIELD_DETAIL);
     }
 
     @Override
@@ -76,14 +75,6 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     }
 
     private static ResponseEntity<Object> invalidRequest(String detail) {
-        return ResponseEntity.badRequest()
-                .body(problem(HttpStatus.BAD_REQUEST, "invalid-request", "Invalid request", detail));
-    }
-
-    private static ProblemDetail problem(HttpStatus status, String type, String title, String detail) {
-        var problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setType(URI.create("/problems/" + type));
-        problem.setTitle(title);
-        return problem;
+        return ResponseEntity.badRequest().body(ProblemType.INVALID_REQUEST.problem(detail));
     }
 }

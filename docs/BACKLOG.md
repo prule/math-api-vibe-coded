@@ -11,8 +11,8 @@
 | 1 | Walking skeleton | Done | #1 |
 | 2 | Exact operations: add, subtract, multiply | Done | #2 |
 | 3 | Divide | Done | #3 |
-| 4 | Operand limits | In progress | |
-| 5 | OpenAPI documentation | Not started | |
+| 4 | Operand limits | Done | #4 |
+| 5 | OpenAPI documentation | In progress | |
 | 5a | API docs toggle per environment (`prod` profile) | Not started | |
 | 6 | More binary operations (power, modulo) | Not started | |
 | 7 | Unary operations (sqrt, negate) | Not started | |
