@@ -12,7 +12,9 @@ public enum ProblemType {
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "invalid-request", "Invalid request"),
     UNKNOWN_OPERATION(HttpStatus.BAD_REQUEST, "unknown-operation", "Unknown operation"),
     OPERAND_OUT_OF_RANGE(HttpStatus.BAD_REQUEST, "operand-out-of-range", "Operand out of range"),
-    DIVISION_BY_ZERO(HttpStatus.UNPROCESSABLE_CONTENT, "division-by-zero", "Division by zero");
+    DIVISION_BY_ZERO(HttpStatus.UNPROCESSABLE_CONTENT, "division-by-zero", "Division by zero"),
+    INVALID_EXPONENT(HttpStatus.UNPROCESSABLE_CONTENT, "invalid-exponent", "Invalid exponent"),
+    RESULT_OUT_OF_RANGE(HttpStatus.UNPROCESSABLE_CONTENT, "result-out-of-range", "Result out of range");
 
     public static final String UNREADABLE_DETAIL = "The request body is not valid JSON or an operand is not a number.";
     public static final String MISSING_FIELD_DETAIL = "Missing required field(s): operation, a and b are all required.";

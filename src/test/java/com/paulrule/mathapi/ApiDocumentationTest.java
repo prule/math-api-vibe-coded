@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.paulrule.mathapi.domain.Operation;
+import java.util.Arrays;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,7 +91,9 @@ class ApiDocumentationTest {
                                 REF + "operand-out-of-range")))
                 .andExpect(jsonPath(exampleRefs("406")).value(containsInAnyOrder(REF + "not-acceptable")))
                 .andExpect(jsonPath(exampleRefs("415")).value(containsInAnyOrder(REF + "unsupported-media-type")))
-                .andExpect(jsonPath(exampleRefs("422")).value(containsInAnyOrder(REF + "division-by-zero")))
+                .andExpect(jsonPath(exampleRefs("422"))
+                        .value(containsInAnyOrder(
+                                REF + "division-by-zero", REF + "invalid-exponent", REF + "result-out-of-range")))
                 .andExpect(jsonPath(exampleRefs("500")).value(containsInAnyOrder(REF + "unexpected-failure")));
     }
 
@@ -108,6 +111,14 @@ class ApiDocumentationTest {
                         jsonPath(EXAMPLES + "['division-by-zero'].value.type").value("/problems/division-by-zero"))
                 .andExpect(
                         jsonPath(EXAMPLES + "['division-by-zero'].value.status").value(422))
+                .andExpect(
+                        jsonPath(EXAMPLES + "['invalid-exponent'].value.type").value("/problems/invalid-exponent"))
+                .andExpect(
+                        jsonPath(EXAMPLES + "['invalid-exponent'].value.status").value(422))
+                .andExpect(jsonPath(EXAMPLES + "['result-out-of-range'].value.type")
+                        .value("/problems/result-out-of-range"))
+                .andExpect(jsonPath(EXAMPLES + "['result-out-of-range'].value.status")
+                        .value(422))
                 .andExpect(jsonPath(EXAMPLES + "['unsupported-media-type'].value.type")
                         .value("about:blank"))
                 .andExpect(jsonPath(EXAMPLES + "['unsupported-media-type'].value.status")
@@ -132,10 +143,14 @@ class ApiDocumentationTest {
     }
 
     @Test
-    void documentsUnknownOperationExampleWithEverySupportedName() throws Exception {
-        apiDocs()
-                .andExpect(jsonPath(EXAMPLES + "['unknown-operation'].value.detail")
-                        .value(containsString(Operation.supportedNames())));
+    void documentsUnknownOperationExampleListingExactlyEveryOperation() throws Exception {
+        String docs = apiDocs().andReturn().getResponse().getContentAsString();
+        String detail = JsonPath.read(docs, EXAMPLES + "['unknown-operation'].value.detail");
+        String listed = detail.substring(detail.indexOf(": ") + 2, detail.length() - 1);
+
+        assertThat(listed.split(", "))
+                .containsExactly(
+                        Arrays.stream(Operation.values()).map(Enum::name).toArray(String[]::new));
     }
 
     @Test
@@ -145,7 +160,9 @@ class ApiDocumentationTest {
         assertMatchesExample(docs, "invalid-request-missing-field", "{\"operation\":\"ADD\",\"a\":1}");
         assertMatchesExample(docs, "operand-out-of-range", "{\"operation\":\"ADD\",\"a\":\"1E+1001\",\"b\":1}");
         assertMatchesExample(docs, "division-by-zero", "{\"operation\":\"DIVIDE\",\"a\":1,\"b\":0}");
-        assertMatchesExample(docs, "unknown-operation", "{\"operation\":\"NOPE\",\"a\":1,\"b\":2}");
+        assertMatchesExample(docs, "unknown-operation", "{\"operation\":\"NOT_AN_OPERATION\",\"a\":1,\"b\":2}");
+        assertMatchesExample(docs, "invalid-exponent", "{\"operation\":\"POWER\",\"a\":2,\"b\":0.5}");
+        assertMatchesExample(docs, "result-out-of-range", "{\"operation\":\"POWER\",\"a\":100,\"b\":999}");
     }
 
     private void assertMatchesExample(String docs, String example, String body) throws Exception {

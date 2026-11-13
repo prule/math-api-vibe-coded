@@ -2,8 +2,10 @@ package com.paulrule.mathapi.config;
 
 import com.paulrule.mathapi.adapter.in.web.ProblemType;
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.InvalidExponentException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.Operation;
+import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.examples.Example;
@@ -74,6 +76,12 @@ public class OpenApiConfig {
         examples.put(
                 ProblemType.DIVISION_BY_ZERO.slug(),
                 example(ProblemType.DIVISION_BY_ZERO.problem(new DivisionByZeroException().getMessage())));
+        examples.put(
+                ProblemType.INVALID_EXPONENT.slug(),
+                example(ProblemType.INVALID_EXPONENT.problem(new InvalidExponentException().getMessage())));
+        examples.put(
+                ProblemType.RESULT_OUT_OF_RANGE.slug(),
+                example(ProblemType.RESULT_OUT_OF_RANGE.problem(new ResultOutOfRangeException().getMessage())));
         // Framework errors: Spring writes these details; shown as returned for a typical request.
         examples.put(
                 "unsupported-media-type",

@@ -5,7 +5,7 @@ import java.math.MathContext;
 import java.util.Arrays;
 import java.util.List;
 
-/** ADD, SUBTRACT and MULTIPLY are exact; DIVIDE rounds to DECIMAL128 (BR-3). */
+/** ADD, SUBTRACT, MULTIPLY and MODULO are exact; DIVIDE and POWER round to DECIMAL128 (BR-3). */
 public enum Operation {
     ADD {
         @Override
@@ -33,7 +33,41 @@ public enum Operation {
             }
             return a.divide(b, MathContext.DECIMAL128);
         }
+    },
+    POWER {
+        @Override
+        public BigDecimal apply(BigDecimal a, BigDecimal b) {
+            // BR-5, checked before any arithmetic: the cheap bound first, so 1E+1000 is never stripped or expanded.
+            if (b.abs().compareTo(MAX_EXPONENT) > 0 || b.stripTrailingZeros().scale() > 0) {
+                throw new InvalidExponentException();
+            }
+            int exponent = b.intValueExact();
+            if (a.signum() == 0 && exponent < 0) {
+                throw new DivisionByZeroException(); // BR-2
+            }
+            // BR-3: the exact power, rounded once. BigDecimal.pow(int, MathContext) may be off in the last digit.
+            BigDecimal exact = a.pow(Math.abs(exponent));
+            BigDecimal result = exponent < 0
+                    ? BigDecimal.ONE.divide(exact, MathContext.DECIMAL128)
+                    : exact.round(MathContext.DECIMAL128);
+            if (Math.abs(result.stripTrailingZeros().scale()) > Calculation.MAX_SCALE) {
+                throw new ResultOutOfRangeException(); // BR-6
+            }
+            return result;
+        }
+    },
+    MODULO {
+        @Override
+        public BigDecimal apply(BigDecimal a, BigDecimal b) {
+            if (b.signum() == 0) {
+                throw new DivisionByZeroException(); // BR-2
+            }
+            return a.remainder(b); // BR-7: truncated toward zero, so it takes the sign of a
+        }
     };
+
+    /** BR-5: the largest |exponent| POWER accepts. */
+    static final BigDecimal MAX_EXPONENT = BigDecimal.valueOf(999);
 
     public abstract BigDecimal apply(BigDecimal a, BigDecimal b);
 

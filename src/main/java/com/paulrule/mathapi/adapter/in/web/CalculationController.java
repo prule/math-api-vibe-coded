@@ -76,7 +76,11 @@ class CalculationController {
                     @Content(
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
                             schema = @Schema(ref = PROBLEM),
-                            examples = @ExampleObject(name = "division-by-zero", ref = EXAMPLES + "division-by-zero")))
+                            examples = {
+                                @ExampleObject(name = "division-by-zero", ref = EXAMPLES + "division-by-zero"),
+                                @ExampleObject(name = "invalid-exponent", ref = EXAMPLES + "invalid-exponent"),
+                                @ExampleObject(name = "result-out-of-range", ref = EXAMPLES + "result-out-of-range")
+                            }))
     @ApiResponse(
             responseCode = "500",
             description = "Unexpected failure; no internals are exposed",
