@@ -3,7 +3,7 @@ package com.paulrule.mathapi.domain;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.List;
 
 /** ADD, SUBTRACT and MULTIPLY are exact; DIVIDE rounds to DECIMAL128 (BR-3). */
 public enum Operation {
@@ -44,7 +44,11 @@ public enum Operation {
                 .orElseThrow(UnknownOperationException::new);
     }
 
+    public static List<String> names() {
+        return Arrays.stream(values()).map(Operation::name).toList();
+    }
+
     public static String supportedNames() {
-        return Arrays.stream(values()).map(Operation::name).collect(Collectors.joining(", "));
+        return String.join(", ", names());
     }
 }
