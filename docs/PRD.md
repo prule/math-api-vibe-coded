@@ -96,7 +96,7 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 ## 4. Non-functional requirements
 
 - **Exactness:** `BigDecimal` throughout; `0.1 + 0.2` returns `"0.3"`.
-- **Safety:** operand limits (BR-1) prevent CPU-exhaustion via huge exponents.
+- **Safety:** operand limits (BR-1) and the `POWER` exponent bound (BR-5) prevent CPU exhaustion.
 - **Stateless:** no database, no session; any instance can serve any request.
 - **Stack:** Java 25, Spring Boot 4 — see [STANDARDS.md](STANDARDS.md).
 
@@ -118,7 +118,7 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 
 ## 7. Success criteria (v1)
 
-- All four operations return correct exact results, including the edge cases listed in the domain model.
+- Every operation returns the correct result, including the edge cases listed in the domain model.
 - Every error path in §3.2 returns the stated status and Problem Details `type`.
 - `./gradlew build` passes in CI (tests, ArchUnit, Spotless).
 
@@ -129,3 +129,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
 | 2026-11-13 | §3.2: framework errors and unexpected failures use `type: about:blank` |
 | 2026-11-13 | §3.2: body limit is 16,384 bytes (the parser counts bytes); field names are capped at 1,000 characters too |
+| 2026-11-13 | `POWER` and `MODULO` implemented (§3.1 already listed them); §4 cites BR-5, §7 no longer says "four operations" |

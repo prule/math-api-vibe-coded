@@ -107,6 +107,166 @@ class CalculationTest {
         assertThat(result(Operation.DIVIDE, "0.00", "7")).isEqualTo("0");
     }
 
+    @Test
+    void raisesToAPositiveIntegerPowerExactly() {
+        assertThat(result(Operation.POWER, "2", "10")).isEqualTo("1024");
+        assertThat(result(Operation.POWER, "1.5", "2")).isEqualTo("2.25");
+    }
+
+    @Test
+    void raisesToANegativePowerAsTheReciprocal_BR5() {
+        assertThat(result(Operation.POWER, "2", "-2")).isEqualTo("0.25");
+        assertThat(result(Operation.POWER, "3", "-1")).isEqualTo("0." + "3".repeat(34));
+    }
+
+    @Test
+    void raisesANegativeBaseFollowingSignRules() {
+        assertThat(result(Operation.POWER, "-2", "3")).isEqualTo("-8");
+        assertThat(result(Operation.POWER, "-2", "2")).isEqualTo("4");
+    }
+
+    @Test
+    void roundsALargePowerOnceToThirtyFourSignificantDigits_BR3() {
+        // 2^200 = 1606938044258990275541962092341162602522202993782792835301376 (61 digits)
+        assertThat(result(Operation.POWER, "2", "200"))
+                .isEqualTo("1606938044258990275541962092341163" + "0".repeat(27));
+    }
+
+    @Test
+    void roundsThePowerOnceNotAtEachMultiplication_BR3() {
+        // 1.0000000000000000000000000000000001^999 is 1 + 999E-34 + ..., which rounds to 1 + 1E-31;
+        // rounding at each step would round the base to 1 and return 1.
+        assertThat(result(Operation.POWER, "1.0000000000000000000000000000000001", "999"))
+                .isEqualTo("1." + "0".repeat(30) + "1");
+        // BigDecimal.pow(668, DECIMAL128) answers ...838 here: it may be off in the last digit, the exact power isn't.
+        assertThat(new Calculation(
+                                Operation.POWER,
+                                new BigDecimal("0.2857142857142857142857142857142857"),
+                                new BigDecimal("668"))
+                        .result())
+                .isEqualByComparingTo("3.652131226730419500116141828190839E-364");
+    }
+
+    @Test
+    void raisesEveryBaseToTheZerothPowerAsOne_BR5() {
+        assertThat(result(Operation.POWER, "0", "0")).isEqualTo("1");
+        assertThat(result(Operation.POWER, "-7.5", "0.00")).isEqualTo("1");
+    }
+
+    @Test
+    void acceptsAnIntegerExponentWrittenWithAScale_BR5() {
+        assertThat(result(Operation.POWER, "2", "3.0")).isEqualTo("8");
+        assertThat(result(Operation.POWER, "10", "1E+2")).isEqualTo("1" + "0".repeat(100));
+    }
+
+    @Test
+    void acceptsExponentsAtTheLimit_BR5() {
+        assertThat(result(Operation.POWER, "1", "999")).isEqualTo("1");
+        assertThat(result(Operation.POWER, "1", "-999")).isEqualTo("1");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0.5", "1000", "-1000", "1E+1000", "999.0000001"})
+    void rejectsAnExponentThatIsNotAnIntegerWithinNineHundredNinetyNine_BR5(String exponent) {
+        var calculation = new Calculation(Operation.POWER, new BigDecimal("2"), new BigDecimal(exponent));
+
+        assertThatThrownBy(calculation::result).isInstanceOf(InvalidExponentException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "0.00", "-0"})
+    void rejectsZeroToANegativePowerAsDivisionByZero_BR2(String zero) {
+        var calculation = new Calculation(Operation.POWER, new BigDecimal(zero), new BigDecimal("-1"));
+
+        assertThatThrownBy(calculation::result).isInstanceOf(DivisionByZeroException.class);
+    }
+
+    @Test
+    void raisesZeroToAPositivePowerAsZero() {
+        assertThat(result(Operation.POWER, "0.00", "5")).isEqualTo("0");
+    }
+
+    @Test
+    void checksTheExponentBeforeDivisionByZero_BR5_BR2() {
+        var calculation = new Calculation(Operation.POWER, BigDecimal.ZERO, new BigDecimal("-0.5"));
+
+        assertThatThrownBy(calculation::result).isInstanceOf(InvalidExponentException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"100", "0.01"})
+    void rejectsAPowerWhoseResultScaleIsOutsideOneThousand_BR6(String base) {
+        var calculation = new Calculation(Operation.POWER, new BigDecimal(base), new BigDecimal("999"));
+
+        assertThatThrownBy(calculation::result).isInstanceOf(ResultOutOfRangeException.class);
+    }
+
+    @Test
+    void acceptsAPowerWhoseResultScaleIsAtTheLimit_BR6() {
+        assertThat(result(Operation.POWER, "10", "-999")).isEqualTo("0." + "0".repeat(998) + "1");
+        assertThat(result(Operation.POWER, "1E+10", "100")).isEqualTo("1" + "0".repeat(1000));
+        assertThat(result(Operation.POWER, "1E-10", "100")).isEqualTo("0." + "0".repeat(999) + "1");
+    }
+
+    @Test
+    void rejectsAPowerWhoseResultScaleIsOnePastTheLimit_BR6() {
+        var calculation = new Calculation(Operation.POWER, new BigDecimal("1E+7"), new BigDecimal("143"));
+
+        assertThatThrownBy(calculation::result).isInstanceOf(ResultOutOfRangeException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"999", "-999"})
+    void raisesTheLargestOperandToTheLargestExponentWithinOneSecond_BR5(String exponent) {
+        var largest = new BigDecimal("9." + "9".repeat(99));
+
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> new Calculation(Operation.POWER, largest, new BigDecimal(exponent)).result());
+    }
+
+    @Test
+    void takesTheTruncatedRemainderWithTheSignOfTheDividend_BR7() {
+        assertThat(result(Operation.MODULO, "-7", "3")).isEqualTo("-1");
+        assertThat(result(Operation.MODULO, "7", "-3")).isEqualTo("1");
+        assertThat(result(Operation.MODULO, "7", "3")).isEqualTo("1");
+    }
+
+    @Test
+    void takesTheRemainderOfDecimalsExactly_BR7() {
+        assertThat(result(Operation.MODULO, "5.5", "2")).isEqualTo("1.5");
+        assertThat(result(Operation.MODULO, "-7.5", "2")).isEqualTo("-1.5");
+    }
+
+    @Test
+    void takesAZeroRemainderAsZero() {
+        assertThat(result(Operation.MODULO, "6", "3")).isEqualTo("0");
+    }
+
+    @Test
+    void takesTheRemainderOfTheLargestOperandExactly() {
+        assertThat(result(Operation.MODULO, "1E+1000", "7")).isEqualTo("4");
+    }
+
+    @Test
+    void takesTheRemainderOfTheWidestOperandsWithinOneSecond() {
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> new Calculation(
+                                Operation.MODULO,
+                                new BigDecimal("9." + "9".repeat(99) + "E+1000"),
+                                new BigDecimal("7E-1000"))
+                        .result());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "0.00", "-0"})
+    void rejectsModuloByEveryZeroRepresentation_BR2(String zero) {
+        var calculation = new Calculation(Operation.MODULO, BigDecimal.ONE, new BigDecimal(zero));
+
+        assertThatThrownBy(calculation::result).isInstanceOf(DivisionByZeroException.class);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"1E+1000", "1E-1000", "-1E+1000", "0E-1000"})
     void acceptsOperandsAtTheScaleLimits_BR1(String operand) {

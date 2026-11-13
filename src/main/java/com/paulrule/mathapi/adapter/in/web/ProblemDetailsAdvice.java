@@ -1,7 +1,9 @@
 package com.paulrule.mathapi.adapter.in.web;
 
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.InvalidExponentException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
+import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
 import org.jspecify.annotations.Nullable;
@@ -40,6 +42,16 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DivisionByZeroException.class)
     ProblemDetail divisionByZero(DivisionByZeroException e) {
         return ProblemType.DIVISION_BY_ZERO.problem(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidExponentException.class)
+    ProblemDetail invalidExponent(InvalidExponentException e) {
+        return ProblemType.INVALID_EXPONENT.problem(e.getMessage());
+    }
+
+    @ExceptionHandler(ResultOutOfRangeException.class)
+    ProblemDetail resultOutOfRange(ResultOutOfRangeException e) {
+        return ProblemType.RESULT_OUT_OF_RANGE.problem(e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

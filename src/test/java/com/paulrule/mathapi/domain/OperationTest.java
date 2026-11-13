@@ -13,6 +13,8 @@ class OperationTest {
         assertThat(Operation.named("SUBTRACT")).isEqualTo(Operation.SUBTRACT);
         assertThat(Operation.named("MULTIPLY")).isEqualTo(Operation.MULTIPLY);
         assertThat(Operation.named("DIVIDE")).isEqualTo(Operation.DIVIDE);
+        assertThat(Operation.named("POWER")).isEqualTo(Operation.POWER);
+        assertThat(Operation.named("MODULO")).isEqualTo(Operation.MODULO);
     }
 
     @Test
@@ -22,7 +24,7 @@ class OperationTest {
 
     @Test
     void rejectsUnsupportedName() {
-        assertThatThrownBy(() -> Operation.named("POWER")).isInstanceOf(UnknownOperationException.class);
+        assertThatThrownBy(() -> Operation.named("NOT_AN_OPERATION")).isInstanceOf(UnknownOperationException.class);
         assertThatThrownBy(() -> Operation.named("")).isInstanceOf(UnknownOperationException.class);
     }
 }

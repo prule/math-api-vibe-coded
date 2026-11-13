@@ -89,6 +89,49 @@ class CalculationControllerTest {
     }
 
     @Test
+    void raisesToAnIntegerPower() throws Exception {
+        calculate("""
+                {"operation":"POWER","a":2,"b":"-2"}""")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.b").value("-2"))
+                .andExpect(jsonPath("$.result").value("0.25"));
+    }
+
+    @Test
+    void takesTheTruncatedRemainder_BR7() throws Exception {
+        calculate("""
+                {"operation":"MODULO","a":"-7","b":3}""").andExpect(status().isOk()).andExpect(jsonPath("$.result").value("-1"));
+    }
+
+    @Test
+    void rejectsInvalidExponentAsUnprocessable_BR5() throws Exception {
+        problem(calculate("""
+                {"operation":"POWER","a":2,"b":"0.5"}"""), 422, "/problems/invalid-exponent");
+        problem(calculate("""
+                {"operation":"POWER","a":2,"b":1000}"""), 422, "/problems/invalid-exponent");
+    }
+
+    @Test
+    void rejectsZeroToANegativePowerAndModuloByZeroAsDivisionByZero_BR2() throws Exception {
+        problem(calculate("""
+                {"operation":"POWER","a":0,"b":-1}"""), 422, "/problems/division-by-zero");
+        problem(calculate("""
+                {"operation":"MODULO","a":1,"b":"0.00"}"""), 422, "/problems/division-by-zero");
+    }
+
+    @Test
+    void rejectsResultOutOfRangeAsUnprocessable_BR6() throws Exception {
+        problem(calculate("""
+                {"operation":"POWER","a":100,"b":999}"""), 422, "/problems/result-out-of-range");
+    }
+
+    @Test
+    void reportsOperandOutOfRangeBeforeInvalidExponent_BR1_BR5() throws Exception {
+        problem(calculate("""
+                {"operation":"POWER","a":"1E+1001","b":"0.5"}"""), 400, "/problems/operand-out-of-range");
+    }
+
+    @Test
     void rejectsOperandOutOfRangeNamingItButNotEchoingIt_BR1() throws Exception {
         problem(calculate("""
                 {"operation":"MULTIPLY","a":1e999999999,"b":"1e999999999"}"""), 400, "/problems/operand-out-of-range")
@@ -108,7 +151,7 @@ class CalculationControllerTest {
     @Test
     void reportsUnknownOperationBeforeOperandOutOfRange() throws Exception {
         problem(calculate("""
-                {"operation":"POWER","a":"1E+1001","b":"1"}"""), 400, "/problems/unknown-operation");
+                {"operation":"NOT_AN_OPERATION","a":"1E+1001","b":"1"}"""), 400, "/problems/unknown-operation");
     }
 
     @Test
@@ -209,8 +252,9 @@ class CalculationControllerTest {
     @Test
     void rejectsUnknownOperation() throws Exception {
         problem(calculate("""
-                {"operation":"POWER","a":"1","b":"2"}"""), 400, "/problems/unknown-operation")
-                .andExpect(jsonPath("$.detail").value(containsString("ADD, SUBTRACT, MULTIPLY, DIVIDE")));
+                {"operation":"NOT_AN_OPERATION","a":"1","b":"2"}"""), 400, "/problems/unknown-operation")
+                .andExpect(
+                        jsonPath("$.detail").value(containsString("ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO")));
         problem(calculate("""
                 {"operation":"add","a":"1","b":"2"}"""), 400, "/problems/unknown-operation");
     }
@@ -218,9 +262,9 @@ class CalculationControllerTest {
     @Test
     void reportsInvalidRequestBeforeUnknownOperation() throws Exception {
         problem(calculate("""
-                {"operation":"POWER","a":"abc","b":"2"}"""), 400, "/problems/invalid-request");
+                {"operation":"NOT_AN_OPERATION","a":"abc","b":"2"}"""), 400, "/problems/invalid-request");
         problem(calculate("""
-                {"operation":"POWER","a":"1"}"""), 400, "/problems/invalid-request");
+                {"operation":"NOT_AN_OPERATION","a":"1"}"""), 400, "/problems/invalid-request");
     }
 
     @Test

@@ -30,7 +30,7 @@ Operation.apply(a, b) → Result   (b is null for a unary Operation)
 ```
 
 - Each `Operation` constant declares its arity and implements `apply(BigDecimal a, BigDecimal b)`; a unary constant ignores `b`.
-- Adding an operation = one new constant with its arity + its business rules here + tests. A new kind of failure also needs a domain exception and its Problem Details handler; nothing else changes.
+- Adding an operation = one new constant with its arity + its business rules here + tests. A new kind of failure also needs a domain exception, its Problem Details handler and type (`ProblemType`), and its documented example (`OpenApiConfig`, STANDARDS §4); nothing else changes.
 - `Operation.named(name)` is an exact, case-sensitive lookup; any other name raises `UnknownOperationException`.
 - The `Calculation` constructor checks BR-9 (arity), then BR-1 on each Operand present.
 - `Calculation.result()` applies the Operation and normalises the Result (BR-4 trailing-zero stripping). Plain-notation rendering happens at the web adapter.
@@ -68,3 +68,4 @@ Operation.apply(a, b) → Result   (b is null for a unary Operation)
 | Date | Change |
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
+| 2026-11-13 | §2: a new kind of failure also needs its `ProblemType` and documented example; `POWER` and `MODULO` (BR-5, BR-6, BR-7) implemented |

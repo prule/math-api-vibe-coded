@@ -13,8 +13,8 @@
 | 3 | Divide | Done | #3 |
 | 4 | Operand limits | Done | #4 |
 | 5 | OpenAPI documentation | Done | #5 |
-| 5a | API docs toggle per environment (`prod` profile) | In progress | |
-| 6 | More binary operations (power, modulo) | Not started | |
+| 5a | API docs toggle per environment (`prod` profile) | Done | #7 |
+| 6 | More binary operations (power, modulo) | In progress | |
 | 7 | Unary operations (sqrt, negate) | Not started | |
 | 8 | Operations discovery endpoint | Not started | |
 
