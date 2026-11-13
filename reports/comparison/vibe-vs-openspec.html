@@ -79,14 +79,74 @@ a:focus-visible { outline: 2px solid var(--vibe); outline-offset: 2px; }
 <div class="wrap">
 
 <header style="display:grid;gap:14px">
-  <div class="eyebrow">Math API · backlog items 1–5 · 13 Nov 2026</div>
+  <div class="eyebrow">Math API · backlog items 1–7 · 13 Nov 2026</div>
   <h1>Vibe coding vs OpenSpec</h1>
-  <p class="lede">The same PRD, domain model, standards and backlog prompts, built twice by one agent on Claude Opus 5.5. One build planned every change in OpenSpec first; the other went straight from the backlog prompt to code. Both then ran the same code reviews, wrote retrospectives and merged by PR on green CI.</p>
+  <p class="lede">The same PRD, domain model, standards and backlog prompts, built twice by one agent on Claude Opus 5.5. One build planned every change in OpenSpec first; the other went straight from the backlog prompt to code. Both then ran the same code reviews, wrote retrospectives and merged by PR on green CI. The first comparison stopped at item 5. A second round then took both builds through items 5a, 6 and 7, each in a fresh session.</p>
   <div class="key">
     <span><i class="sw v"></i><b class="v">vibe</b>&nbsp;math-api-vibe-coded @ <code>d9378cf</code></span>
     <span><i class="sw o"></i><b class="o">openspec</b>&nbsp;math-api-one-agent-2 @ <code>f257be0</code></span>
   </div>
 </header>
+
+<section>
+  <div class="eyebrow">Round 2 · items 5a, 6 and 7</div>
+  <h2>The next three items: same cost gap, no behaviour gap</h2>
+  <p>Items 6 and 7 were meant to be the better test of OpenSpec, because they change existing behaviour. Item 6 adds POWER and MODULO and modifies an existing spec scenario. Item 7 adds unary SQRT and NEGATE, and its prompt leaves the arity design open. Each build ran the three items in a new session with no context, following its own CLAUDE.md through to merge on green.</p>
+  <div class="tiles">
+    <div class="tile"><div class="label">Active minutes, items 5a–7</div><div class="nums"><span class="v">18.3</span><span class="o">26.5</span></div><div class="note">OpenSpec took 1.45×</div></div>
+    <div class="tile"><div class="label">Output tokens, items 5a–7</div><div class="nums"><span class="v">84k</span><span class="o">130k</span></div><div class="note">OpenSpec used 1.55×</div></div>
+    <div class="tile"><div class="label">Tests at item 7 (all green)</div><div class="nums"><span class="v">152</span><span class="o">261</span></div><div class="note">Branch coverage 91.7% vs 97.9%</div></div>
+    <div class="tile"><div class="label">Review findings, items 5a–7</div><div class="nums"><span class="v">≈22</span><span class="o">21</span></div><div class="note">OpenSpec's include 4 from plan review</div></div>
+    <div class="tile"><div class="label">New-behaviour probes matching</div><div class="nums"><span class="v">36/36</span><span class="o">36/36</span></div><div class="note">Every DOMAIN-MODEL edge case, identical in both</div></div>
+    <div class="tile"><div class="label">Regressions in item 1–5 probes</div><div class="nums"><span class="v">0</span><span class="o">0</span></div><div class="note">Only change: POWER now exists</div></div>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Item</th><th class="n">vibe active min</th><th class="n">openspec active min</th><th class="n">vibe output tok</th><th class="n">openspec output tok</th></tr>
+    <tr><td>5a · docs off under <code>prod</code></td><td class="n">5.0</td><td class="n">7.9</td><td class="n">17.8k</td><td class="n">36.2k</td></tr>
+    <tr><td>6 · POWER, MODULO</td><td class="n">6.3</td><td class="n">8.9*</td><td class="n">31.8k</td><td class="n">50.4k*</td></tr>
+    <tr><td>7 · SQRT, NEGATE, arity</td><td class="n">7.0</td><td class="n">9.8</td><td class="n">34.6k</td><td class="n">43.1k</td></tr>
+    <tr><td><b>Total</b></td><td class="n"><b>18.3</b></td><td class="n"><b>26.5</b></td><td class="n"><b>84k</b></td><td class="n"><b>130k</b></td></tr>
+  </table></div>
+  <p style="font-size:13px;color:var(--muted)">* Includes the whole-repo <code>/ponytail:ponytail-audit</code> that the OpenSpec build's CLAUDE.md runs before the first post-v1 item. Both sessions ran on Opus 5.5. In both rounds, item costs come from the same script.</p>
+
+  <h3>What the reviews caught</h3>
+  <div class="cols">
+    <div>
+      <p><b class="o">openspec</b>'s plan review raised 4 points:</p>
+      <ul>
+        <li>a webjar 404 check that could pass for the wrong reason</li>
+        <li>BR-6 "after normalisation" untested (<code>1.00^999</code> must succeed)</li>
+        <li>a "worst operands" scenario without an expected result</li>
+        <li>a missing task for the unary response, which would have thrown a NullPointerException</li>
+      </ul>
+      <p>Its code reviews added 17 more, mostly docs and test gaps such as negative-exponent BR-6 and <code>b</code> undocumented as optional.</p>
+    </div>
+    <div>
+      <p><b class="v">vibe</b>'s reviews made three main catches:</p>
+      <ul>
+        <li><b>Ponytail:</b> its first real code-level catch in this project. The "round once" POWER test could not fail, because <code>BigDecimal.pow(n, DECIMAL128)</code> passes it while being wrong in the last digit for some inputs. Ponytail found a case that tells the two apart, <code>0.2857142857142857142857142857142857^668</code>.</li>
+        <li><b>Spec reviewer:</b> request <code>b</code> wasn't nullable in the docs schema.</li>
+        <li><b>Both reviewers:</b> PRD and DOMAIN-MODEL side claims had drifted.</li>
+      </ul>
+      <p>Both builds independently flagged the same STANDARDS §6 gap: no row for profile tests.</p>
+    </div>
+  </div>
+  <p><b>None of the plan-review catches showed up as a difference in shipped behaviour.</b> The vibe build gets <code>1.00^999 = 1</code>, unary responses and the webjar 404 right without them, and all 36 new probes match. In this round the plan review made the OpenSpec build's tests stronger, but it didn't prevent a bug the vibe build shipped.</p>
+
+  <h3>The open design decision wasn't open</h3>
+  <p>Item 7's prompt asks for a design decision: whether arity lives on the enum or in separate types, and whether <code>b</code> is optional or rejected. Both builds made the same choices: <code>arity()</code> on each <code>Operation</code> constant, <code>b</code> null for unary Operations, BR-9 checked before BR-1, and <code>b</code> left out of unary responses. DOMAIN-MODEL §2 and PRD §3.2 already describe that final design, so the docs carried it, as the backlog did for items 1–5.</p>
+
+  <h3>Living specs and the audit</h3>
+  <ul>
+    <li><b>Regressions:</b> none in either build. The item 1–5 probes return the same status and type, and the detail-text changes are the ones each PR announced. The tests guarded old behaviour in both builds, so the OpenSpec specs can't be credited with preventing a regression that never happened.</li>
+    <li><b>Milestone audit:</b> only the OpenSpec process has one. Its whole-repo audit before item 6 flagged the same input class as the BR-1 bug (<code>1e2147483648</code>). In that build the input already returns a 400, so the audit skipped it as a classification nit. The vibe build has no audit step, and its 500 for that input survived three more items.</li>
+    <li><b>Session behaviour:</b> the vibe session stopped twice while background reviewers or CI were still running, and needed a nudge to continue. The OpenSpec session needed none. The OpenSpec build's CLAUDE.md says to run every step without waiting to be asked. The vibe build's CLAUDE.md doesn't say that, so this comes from how the instructions are worded, not from OpenSpec itself.</li>
+  </ul>
+  <div class="callout">
+    <h3>Round 2 verdict</h3>
+    <p>The pattern held, and the case for OpenSpec got weaker. OpenSpec still cost about 1.5× the time and tokens, and still produced more tests (261 against 152). This time, though, it caught nothing that the vibe build shipped, and the two builds behave identically on every new case. With docs that already describe the finished design, OpenSpec's plan mostly restates them. Its value here comes down to stronger tests and a written rationale.</p>
+  </div>
+</section>
 
 <section>
   <div class="verdict">
