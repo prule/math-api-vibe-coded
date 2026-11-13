@@ -1,8 +1,10 @@
 package com.paulrule.mathapi.config;
 
 import com.paulrule.mathapi.adapter.in.web.ProblemType;
+import com.paulrule.mathapi.domain.ArityMismatchException;
 import com.paulrule.mathapi.domain.DivisionByZeroException;
 import com.paulrule.mathapi.domain.InvalidExponentException;
+import com.paulrule.mathapi.domain.NegativeSquareRootException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.Operation;
 import com.paulrule.mathapi.domain.ResultOutOfRangeException;
@@ -68,6 +70,9 @@ public class OpenApiConfig {
                 "invalid-request-missing-field",
                 example(ProblemType.INVALID_REQUEST.problem(ProblemType.MISSING_FIELD_DETAIL)));
         examples.put(
+                "invalid-request-arity",
+                example(ProblemType.INVALID_REQUEST.problem(new ArityMismatchException(Operation.SQRT).getMessage())));
+        examples.put(
                 ProblemType.UNKNOWN_OPERATION.slug(),
                 example(ProblemType.UNKNOWN_OPERATION.problem(new UnknownOperationException().getMessage())));
         examples.put(
@@ -79,6 +84,9 @@ public class OpenApiConfig {
         examples.put(
                 ProblemType.INVALID_EXPONENT.slug(),
                 example(ProblemType.INVALID_EXPONENT.problem(new InvalidExponentException().getMessage())));
+        examples.put(
+                ProblemType.NEGATIVE_SQUARE_ROOT.slug(),
+                example(ProblemType.NEGATIVE_SQUARE_ROOT.problem(new NegativeSquareRootException().getMessage())));
         examples.put(
                 ProblemType.RESULT_OUT_OF_RANGE.slug(),
                 example(ProblemType.RESULT_OUT_OF_RANGE.problem(new ResultOutOfRangeException().getMessage())));

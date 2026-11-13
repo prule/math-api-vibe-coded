@@ -37,7 +37,8 @@ class CalculationController {
                             schema = @Schema(implementation = CalculationResponse.class)))
     @ApiResponse(
             responseCode = "400",
-            description = "Invalid request, unknown operation, or operand out of range",
+            description = "Invalid request (including b not matching the Operation's arity), unknown operation,"
+                    + " or operand out of range",
             content =
                     @Content(
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
@@ -47,6 +48,9 @@ class CalculationController {
                                 @ExampleObject(
                                         name = "invalid-request-missing-field",
                                         ref = EXAMPLES + "invalid-request-missing-field"),
+                                @ExampleObject(
+                                        name = "invalid-request-arity",
+                                        ref = EXAMPLES + "invalid-request-arity"),
                                 @ExampleObject(name = "unknown-operation", ref = EXAMPLES + "unknown-operation"),
                                 @ExampleObject(name = "operand-out-of-range", ref = EXAMPLES + "operand-out-of-range")
                             }))
@@ -79,6 +83,7 @@ class CalculationController {
                             examples = {
                                 @ExampleObject(name = "division-by-zero", ref = EXAMPLES + "division-by-zero"),
                                 @ExampleObject(name = "invalid-exponent", ref = EXAMPLES + "invalid-exponent"),
+                                @ExampleObject(name = "negative-square-root", ref = EXAMPLES + "negative-square-root"),
                                 @ExampleObject(name = "result-out-of-range", ref = EXAMPLES + "result-out-of-range")
                             }))
     @ApiResponse(

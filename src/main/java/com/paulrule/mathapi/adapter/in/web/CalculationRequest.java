@@ -17,10 +17,10 @@ public record CalculationRequest(
                 example = "1")
         BigDecimal a,
 
-        @NotNull
         @JsonDeserialize(using = OperandDeserializer.class)
         @Schema(
-                types = {"number", "string"},
-                description = "Operand as a JSON number or numeric string",
+                types = {"number", "string", "null"},
+                description = "Operand as a JSON number or numeric string. Required for a binary Operation;"
+                        + " omit (or null) for a unary one (BR-9)",
                 example = "3")
         BigDecimal b) {}

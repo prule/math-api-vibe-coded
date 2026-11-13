@@ -130,3 +130,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | 2026-11-13 | §3.2: framework errors and unexpected failures use `type: about:blank` |
 | 2026-11-13 | §3.2: body limit is 16,384 bytes (the parser counts bytes); field names are capped at 1,000 characters too |
 | 2026-11-13 | `POWER` and `MODULO` implemented (§3.1 already listed them); §4 cites BR-5, §7 no longer says "four operations" |
+| 2026-11-13 | `SQRT` and `NEGATE` implemented (§3.1 and §3.2 already described unary Operations and an optional `b`) |
