@@ -1,9 +1,12 @@
 package com.paulrule.mathapi.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -102,6 +105,60 @@ class CalculationTest {
     @Test
     void dividesZeroByNonZeroToZero() {
         assertThat(result(Operation.DIVIDE, "0.00", "7")).isEqualTo("0");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1E+1000", "1E-1000", "-1E+1000", "0E-1000"})
+    void acceptsOperandsAtTheScaleLimits_BR1(String operand) {
+        assertThatCode(() -> new Calculation(Operation.ADD, new BigDecimal(operand), BigDecimal.ONE))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> new Calculation(Operation.ADD, BigDecimal.ONE, new BigDecimal(operand)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void acceptsOperandWithOneHundredSignificantDigits_BR1() {
+        var hundredDigits = new BigDecimal("9".repeat(100));
+
+        assertThatCode(() -> new Calculation(Operation.MULTIPLY, hundredDigits, hundredDigits))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1E+1001", "1E-1001", "0E+1001", "0E-1001"})
+    void rejectsOperandOnePastTheScaleLimits_BR1(String operand) {
+        assertThatThrownBy(() -> new Calculation(Operation.ADD, new BigDecimal(operand), BigDecimal.ONE))
+                .isInstanceOf(OperandOutOfRangeException.class)
+                .hasMessageContaining("Operand a")
+                .hasMessageNotContaining("1001");
+        assertThatThrownBy(() -> new Calculation(Operation.ADD, BigDecimal.ONE, new BigDecimal(operand)))
+                .isInstanceOf(OperandOutOfRangeException.class)
+                .hasMessageContaining("Operand b");
+    }
+
+    @Test
+    void rejectsOperandWithOneHundredAndOneSignificantDigits_BR1() {
+        // Small value, but 101 digits as written: the written form is what BR-1 bounds.
+        var written = new BigDecimal("1" + "0".repeat(100));
+
+        assertThatThrownBy(() -> new Calculation(Operation.ADD, written, BigDecimal.ONE))
+                .isInstanceOf(OperandOutOfRangeException.class);
+    }
+
+    @Test
+    void rejectsHugeExponentBeforeAnyArithmetic_BR1() {
+        var huge = new BigDecimal("1e999999999");
+
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> assertThatThrownBy(() -> new Calculation(Operation.MULTIPLY, huge, huge))
+                        .isInstanceOf(OperandOutOfRangeException.class));
+    }
+
+    @Test
+    void checksOperandRangeBeforeDivisionByZero_BR1_BR2() {
+        assertThatThrownBy(() -> new Calculation(Operation.DIVIDE, new BigDecimal("1E+1001"), BigDecimal.ZERO))
+                .isInstanceOf(OperandOutOfRangeException.class);
     }
 
     @Test
